@@ -1,11 +1,18 @@
 use super::card::{Card, CardBuilder};
 use super::status::Status;
+use pest::Parser;
+use pest_derive::Parser;
+
+#[derive(Parser)]
+#[grammar = "kanban.pest"]
+pub struct KanbanParser;
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Kanban {
     columns: Vec<String>,
     cards: Vec<Card>,
 }
+
 impl Kanban {
     pub fn new(columns: &[&str]) -> Self {
         let columns = columns.iter().map(|c| c.to_string()).collect();
@@ -24,7 +31,7 @@ impl Kanban {
     pub fn add_card(&mut self, card: &Card) -> Result<(), String> {
         self.has_column(card.column())?;
         self.cards.push(card.clone());
-        return Ok(());
+        Ok(())
     }
 
     fn has_column(&self, column: &String) -> Result<(), String> {
@@ -52,52 +59,54 @@ impl Kanban {
     }
 
     pub fn parse(input: &str) -> Result<Self, String> {
-        let mut column_name = String::new();
+        let pairs = KanbanParser::parse(Rule::kanban, input).map_err(|e| e.to_string())?;
+
         let mut kanban = Kanban::default();
-        // ignore frontmatter with `---`
-        // Find the first ## and use that as the column name
-        // Each `- [ ] Title` `-` is the card the `[ ]` is the status and the `Title` is the title
-        // `[ ]` is incomplete and `[x]` is done
-        // The date and time are optional and are in the format `YYYY-MM-DD` and `HH:MM` respectively They show as `@{2027-12-31}` and `@@{23:59}`
-        // At the end there is another block with %% ignore them
-        for line in input.lines() {
-            if line.starts_with("## ") {
-                match line.split_at(3) {
-                    ("## ", column) => {
-                        kanban.add_column(column.to_string())?;
-                        column_name = column.to_string();
+        let mut current_column = String::new();
+
+        for pair in pairs.into_iter().next().unwrap().into_inner() {
+            match pair.as_rule() {
+                Rule::column_heading => {
+                    for inner in pair.into_inner() {
+                        if inner.as_rule() == Rule::text {
+                            current_column = inner.as_str().to_string();
+                            kanban.add_column(current_column.clone())?;
+                        }
                     }
-                    _ => {
-                        return Err("Column name is empty".to_string());
-                    }
-                };
-            }
-            if line.starts_with("-") {
-                if column_name.is_empty() {
-                    return Err("No column to add card to".to_string());
                 }
-                match line.split_at(6) {
-                    ("- [ ] ", title) => {
-                        kanban.add_card(
-                            &CardBuilder::new()
-                                .column(&column_name)
-                                .title(title)
-                                .build()?,
-                        )?;
+                Rule::card => {
+                    let mut card_text = String::new();
+                    let mut status = Status::Incomplete;
+
+                    for part in pair.into_inner() {
+                        match part.as_rule() {
+                            Rule::status => {
+                                let status_inner = part.into_inner().next().unwrap();
+                                status = match status_inner.as_rule() {
+                                    Rule::complete => Status::Done,
+                                    Rule::incomplete => Status::Incomplete,
+                                    _ => return Err("Invalid status".to_string()),
+                                };
+                            }
+                            Rule::text => {
+                                card_text = part.as_str().to_string();
+                            }
+                            _ => {}
+                        }
                     }
-                    ("- [x] ", title) => {
-                        kanban.add_card(
-                            &CardBuilder::new()
-                                .column(&column_name)
-                                .title(title)
-                                .status(Status::Done)
-                                .build()?,
-                        )?;
-                    }
-                    _ => (),
+
+                    kanban.add_card(
+                        &CardBuilder::new()
+                            .column(&current_column)
+                            .title(&card_text)
+                            .status(status)
+                            .build()?,
+                    )?;
                 }
+                _ => {}
             }
         }
+
         Ok(kanban)
     }
 }

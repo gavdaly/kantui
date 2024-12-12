@@ -1,0 +1,16 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+SPACE      = _{ " " }
+
+kanban = { SOI ~ column+ ~ EOI }
+
+column         = _{ column_heading ~ column_content }
+column_heading = ${ "##" ~ SPACE+ ~ text ~ NEWLINE }
+column_content = _{ NEWLINE* ~ card* }
+
+card   = ${ "- [" ~ status ~ "]" ~ " "+ ~ text ~ NEWLINE? }
+text   =  { (!NEWLINE ~ ANY)+ }
+status = ${ complete | incomplete }
+
+// Make status atomic
+complete   = { "x" }
+incomplete = { " " }
