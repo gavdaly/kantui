@@ -91,3 +91,44 @@ impl CardBuilder {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_card_builder() {
+        let card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        assert_eq!(card.column(), "Column");
+        assert_eq!(card.status(), &Status::Done);
+        assert_eq!(card.title(), "Title");
+    }
+
+    #[test]
+    fn test_card_to_string() {
+        let card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        assert_eq!(card.to_string(), "- [x] Title");
+    }
+
+    #[test]
+    fn test_card_move_to() {
+        let mut card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        card.move_to(&"New Column".to_string());
+        assert_eq!(card.column(), "New Column");
+    }
+}
