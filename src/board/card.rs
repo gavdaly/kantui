@@ -68,12 +68,12 @@ impl CardBuilder {
         self
     }
 
-    pub fn date(mut self, date: &str) -> Self {
+    pub fn _date(mut self, date: &str) -> Self {
         self.date = Some(date.to_string());
         self
     }
 
-    pub fn time(mut self, time: &str) -> Self {
+    pub fn _time(mut self, time: &str) -> Self {
         self.time = Some(time.to_string());
         self
     }
