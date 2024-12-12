@@ -37,6 +37,18 @@ impl Card {
     pub fn title(&self) -> &String {
         &self.title
     }
+
+    pub fn mut_rename(mut self, new_name: &str) -> Self {
+        self.title = new_name.to_string();
+        self
+    }
+
+    pub fn rename(&self, new_name: &str) -> Self {
+        Card {
+            title: new_name.to_string(),
+            ..self.clone()
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -68,12 +80,12 @@ impl CardBuilder {
         self
     }
 
-    pub fn date(mut self, date: &str) -> Self {
+    pub fn _date(mut self, date: &str) -> Self {
         self.date = Some(date.to_string());
         self
     }
 
-    pub fn time(mut self, time: &str) -> Self {
+    pub fn _time(mut self, time: &str) -> Self {
         self.time = Some(time.to_string());
         self
     }
@@ -89,5 +101,71 @@ impl CardBuilder {
             date: self.date,
             time: self.time,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_card_builder() {
+        let card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        assert_eq!(card.column(), "Column");
+        assert_eq!(card.status(), &Status::Done);
+        assert_eq!(card.title(), "Title");
+    }
+
+    #[test]
+    fn test_card_to_string() {
+        let card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        assert_eq!(card.to_string(), "- [x] Title");
+    }
+
+    #[test]
+    fn test_card_move_to() {
+        let mut card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        card.move_to(&"New Column".to_string());
+        assert_eq!(card.column(), "New Column");
+    }
+
+    #[test]
+    fn test_card_rename() {
+        let card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        let renamed = card.clone().rename("New Title");
+        assert_eq!(renamed.title(), "New Title");
+        assert_eq!(card.title(), "Title");
+    }
+
+    #[test]
+    fn test_card_mut_rename() {
+        let card = CardBuilder::new()
+            .column("Column")
+            .status(Status::Done)
+            .title("Title")
+            .build()
+            .unwrap();
+        let renamed = card.mut_rename("New Title");
+        assert_eq!(renamed.title(), "New Title");
     }
 }
