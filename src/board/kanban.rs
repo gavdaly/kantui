@@ -62,12 +62,12 @@ impl Kanban {
         // At the end there is another block with %% ignore them
         for line in input.lines() {
             if line.starts_with("## ") {
-                match line.split("## ").next() {
-                    Some(column) => {
+                match line.split_at(3) {
+                    ("## ", column) => {
                         kanban.add_column(column.to_string())?;
                         column_name = column.to_string();
                     }
-                    None => {
+                    _ => {
                         return Err("Column name is empty".to_string());
                     }
                 };
@@ -99,5 +99,51 @@ impl Kanban {
             }
         }
         Ok(kanban)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    const TEST_INPUT: &str = r#"## In Progress
+
+- [ ] I'm doing it!!"#;
+
+    #[test]
+    fn test_add_card() {
+        let mut kanban = Kanban::default();
+        kanban.add_column("Test Column".to_string()).unwrap();
+
+        let card = CardBuilder::new()
+            .column("Test Column")
+            .title("Test Card")
+            .build()
+            .unwrap();
+
+        kanban.add_card(&card).unwrap();
+        assert_eq!(kanban.columns, vec!["Test Column".to_string()]);
+        assert_eq!(kanban.cards.len(), 1);
+        assert_eq!(kanban.cards[0].title(), "Test Card");
+    }
+
+    #[test]
+    fn test_add_card_invalid_column() {
+        let mut kanban = Kanban::default();
+        let card = CardBuilder::new()
+            .column("Invalid Column")
+            .title("Test Card")
+            .build()
+            .unwrap();
+
+        assert!(kanban.add_card(&card).is_err());
+    }
+
+    #[test]
+    fn test_parse() {
+        let kanban = Kanban::parse(TEST_INPUT).unwrap();
+        assert_eq!(kanban.columns, vec!["In Progress".to_string()]);
+        assert_eq!(kanban.cards.len(), 1);
+        assert_eq!(kanban.cards[0].title(), "I'm doing it!!");
+        assert_eq!(kanban.cards[0].status(), &Status::Incomplete);
     }
 }
