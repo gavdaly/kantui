@@ -3,6 +3,8 @@ use super::status::Status;
 use pest::Parser;
 use pest_derive::Parser;
 
+/// A PEG parser for Kanban files using a Pest grammar.
+/// Uses the grammar defined in `kanban.pest` to parse Kanban boards and cards.
 #[derive(Parser)]
 #[grammar = "kanban.pest"]
 pub struct KanbanParser;
@@ -14,6 +16,14 @@ pub struct Kanban {
 }
 
 impl Kanban {
+    /// Creates a new Kanban board with the specified columns.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use kantui::Kanban;
+    /// let board = Kanban::new(&["To Do", "In Progress", "Done"]);
+    /// ```
     pub fn new(columns: &[&str]) -> Self {
         let columns = columns.iter().map(|c| c.to_string()).collect();
         Kanban {
@@ -22,18 +32,46 @@ impl Kanban {
         }
     }
 
+    /// Adds a new column to the Kanban board.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use kantui::Kanban;
+    /// let mut board = Kanban::default();
+    /// board.add_column("To Do".to_string()).unwrap();
+    /// ```
     pub fn add_column(&mut self, name: String) -> Result<(), String> {
         self.columns.push(name);
 
         Ok(())
     }
 
+    /// Adds a card to the Kanban board in the specified column.
+    /// Returns an error if the column does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use kantui::{Kanban, Card, CardBuilder};
+    /// let mut board = Kanban::default();
+    /// board.add_column("To Do".to_string()).unwrap();
+    ///
+    /// let card = CardBuilder::new()
+    ///     .column("To Do")
+    ///     .title("Implement feature")
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// board.add_card(&card).unwrap();
+    /// ```
     pub fn add_card(&mut self, card: &Card) -> Result<(), String> {
         self.has_column(card.column())?;
         self.cards.push(card.clone());
         Ok(())
     }
 
+    /// Internal helper to check if a column exists.
     fn has_column(&self, column: &String) -> Result<(), String> {
         match self.columns.contains(column) {
             true => Ok(()),
@@ -41,6 +79,26 @@ impl Kanban {
         }
     }
 
+    /// Moves a card to a different column.
+    /// Returns an error if the target column does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use kantui::{Kanban, Card, CardBuilder};
+    /// let mut board = Kanban::default();
+    /// board.add_column("To Do".to_string()).unwrap();
+    /// board.add_column("Done".to_string()).unwrap();
+    ///
+    /// let card = CardBuilder::new()
+    ///     .column("To Do")
+    ///     .title("Task")
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// board.add_card(&card).unwrap();
+    /// board.move_card(&"Done".to_string(), card).unwrap();
+    /// ```
     pub fn move_card(&mut self, to: &String, card: Card) -> Result<(), String> {
         self.has_column(to)?;
 
@@ -58,6 +116,20 @@ impl Kanban {
         Ok(())
     }
 
+    /// Parses a Kanban board from a string in the markdown-like format.
+    /// Returns an error if the input is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use kantui::Kanban;
+    ///
+    /// let input = r#"## To Do
+    /// - [ ] Implement feature
+    /// - [x] Write docs"#;
+    ///
+    /// let board = Kanban::parse(input).unwrap();
+    /// ```
     pub fn parse(input: &str) -> Result<Self, String> {
         let pairs = KanbanParser::parse(Rule::kanban, input).map_err(|e| e.to_string())?;
 
