@@ -51,6 +51,25 @@ impl Card {
     }
 }
 
+impl std::fmt::Display for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let status = self.status.to_string();
+        let title = &self.title;
+        let date = self
+            .date
+            .as_ref()
+            .map(|d| format!(" @{{{}}}", d))
+            .unwrap_or_default();
+        let time = self
+            .time
+            .as_ref()
+            .map(|t| format!(" @@{{{}}}", t))
+            .unwrap_or_default();
+
+        write!(f, "- [{status}] {title}{date}{time}")
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CardBuilder {
     column: Option<String>,
