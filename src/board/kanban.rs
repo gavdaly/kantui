@@ -251,16 +251,30 @@ mod test {
 - [ ] Task with date @{2024-01-15}
 - [ ] Second Task
 - [ ] Third One @@{20:02}
+
+## In Progress
+
+- [ ] I'm doing it!!
 "#;
 
         let kanban = Kanban::parse(input).unwrap();
-        assert_eq!(kanban.columns, vec!["To Do".to_string()]);
-        assert_eq!(kanban.cards.len(), 3);
-        assert_eq!(kanban.cards[0].title().trim(), "Task with date");
+        assert_eq!(
+            kanban.columns,
+            vec!["To Do".to_string(), "In Progress".to_string()]
+        );
+        assert_eq!(kanban.cards.len(), 4);
+        assert_eq!(kanban.cards[0].title(), "Task with date");
         assert_eq!(kanban.cards[0].date(), Some("2024-01-15".to_string()));
-        assert_eq!(kanban.cards[1].title().trim(), "Second Task");
-        assert_eq!(kanban.cards[2].title().trim(), "Third One");
+        assert_eq!(kanban.cards[0].column(), &format!("To Do"));
+        assert_eq!(kanban.cards[1].title(), "Second Task");
+        assert_eq!(kanban.cards[1].column(), &format!("To Do"));
+        assert_eq!(kanban.cards[2].title(), "Third One");
         assert_eq!(kanban.cards[2].time(), Some("20:02".to_string()));
+        assert_eq!(kanban.cards[2].column(), &format!("To Do"));
+        assert_eq!(kanban.cards[3].title(), "I'm doing it!!");
+        assert_eq!(kanban.cards[3].date(), None);
+        assert_eq!(kanban.cards[3].time(), None);
+        assert_eq!(kanban.cards[3].column(), &format!("In Progress"));
     }
 
     #[test]
