@@ -1,0 +1,21 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+SPACE      = _{ " " }
+
+// Basic building blocks first
+text         = @{ (!("@{" | "@@{" | NEWLINE) ~ ANY)+ }
+time         = ${ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} }
+time_wrapper = _{ SPACE? ~ "@@{" ~ time ~ "}" }
+date         = ${ ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{1, 2} ~ "-" ~ ASCII_DIGIT{1, 2} }
+date_wrapper = _{ "@{" ~ date ~ "}" }
+complete     =  { "x" }
+incomplete   =  { " " }
+status       =  { complete | incomplete }
+
+// More complex rules that use the building blocks
+card           = ${ "- [" ~ status ~ "]" ~ " "+ ~ text ~ date_wrapper? ~ time_wrapper? ~ NEWLINE? }
+column_heading = ${ "##" ~ SPACE+ ~ text ~ NEWLINE }
+column_content = _{ NEWLINE* ~ card* }
+column         = _{ column_heading ~ column_content }
+
+// The top-level rule last
+kanban = { SOI ~ column+ ~ EOI }

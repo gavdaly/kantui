@@ -10,23 +10,8 @@ pub struct Card {
 }
 
 impl Card {
-    pub fn to_string(&self) -> String {
-        let status = self.status.to_string();
-        let title = &self.title;
-        let date = self
-            .date
-            .as_ref()
-            .map(|d| format!(" @{{{}}}", d))
-            .unwrap_or_default();
-        let time = self
-            .time
-            .as_ref()
-            .map(|t| format!(" @@{{{}}}", t))
-            .unwrap_or_default();
-        format!("- [{status}] {title}{date}{time}")
-    }
-    pub fn move_to(&mut self, to: &String) {
-        self.column = to.clone();
+    pub fn move_to(&mut self, to: &str) {
+        self.column = to.to_string();
     }
     pub fn column(&self) -> &String {
         &self.column
@@ -36,6 +21,14 @@ impl Card {
     }
     pub fn title(&self) -> &String {
         &self.title
+    }
+
+    pub fn date(&self) -> Option<String> {
+        self.date.clone()
+    }
+
+    pub fn time(&self) -> Option<String> {
+        self.time.clone()
     }
 
     pub fn mut_rename(mut self, new_name: &str) -> Self {
@@ -99,12 +92,12 @@ impl CardBuilder {
         self
     }
 
-    pub fn _date(mut self, date: &str) -> Self {
+    pub fn date(mut self, date: &str) -> Self {
         self.date = Some(date.to_string());
         self
     }
 
-    pub fn _time(mut self, time: &str) -> Self {
+    pub fn time(mut self, time: &str) -> Self {
         self.time = Some(time.to_string());
         self
     }
