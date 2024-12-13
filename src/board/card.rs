@@ -27,6 +27,10 @@ impl Card {
         self.date.clone()
     }
 
+    pub fn time(&self) -> Option<String> {
+        self.time.clone()
+    }
+
     pub fn mut_rename(mut self, new_name: &str) -> Self {
         self.title = new_name.to_string();
         self
@@ -93,7 +97,7 @@ impl CardBuilder {
         self
     }
 
-    pub fn _time(mut self, time: &str) -> Self {
+    pub fn time(mut self, time: &str) -> Self {
         self.time = Some(time.to_string());
         self
     }

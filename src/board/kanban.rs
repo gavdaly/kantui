@@ -150,6 +150,7 @@ impl Kanban {
                     let mut card_text = String::new();
                     let mut status = Status::Incomplete;
                     let mut date: Option<String> = None;
+                    let mut time: Option<String> = None;
 
                     for part in pair.into_inner() {
                         match part.as_rule() {
@@ -162,11 +163,15 @@ impl Kanban {
                                 };
                             }
                             Rule::text => {
-                                card_text = part.as_str().to_string();
+                                card_text = part.as_str().trim().to_string();
                             }
                             Rule::date => {
                                 let date_str = part.as_str();
                                 date = Some(date_str.to_string());
+                            }
+                            Rule::time => {
+                                let time_str = part.as_str();
+                                time = Some(time_str.to_string());
                             }
                             _ => {}
                         }
@@ -178,6 +183,9 @@ impl Kanban {
                         .status(status);
                     if let Some(date) = date {
                         card = card.date(&date);
+                    }
+                    if let Some(time) = time {
+                        card = card.time(&time);
                     }
                     let card = card.build()?;
 
@@ -242,13 +250,17 @@ mod test {
 
 - [ ] Task with date @{2024-01-15}
 - [ ] Second Task
+- [ ] Third One @@{20:02}
 "#;
 
         let kanban = Kanban::parse(input).unwrap();
         assert_eq!(kanban.columns, vec!["To Do".to_string()]);
-        assert_eq!(kanban.cards.len(), 2);
+        assert_eq!(kanban.cards.len(), 3);
         assert_eq!(kanban.cards[0].title().trim(), "Task with date");
         assert_eq!(kanban.cards[0].date(), Some("2024-01-15".to_string()));
+        assert_eq!(kanban.cards[1].title().trim(), "Second Task");
+        assert_eq!(kanban.cards[2].title().trim(), "Third One");
+        assert_eq!(kanban.cards[2].time(), Some("20:02".to_string()));
     }
 
     #[test]
@@ -261,6 +273,16 @@ mod test {
     #[test]
     fn test_parse_card() {
         let input = "- [x] Title @{2025-01-02}";
+        let parser = KanbanParser::parse(Rule::card, input)
+            .unwrap()
+            .next()
+            .unwrap();
+        assert_eq!(parser.into_inner().len(), 3);
+    }
+
+    #[test]
+    fn test_parse_card_with_time() {
+        let input = "- [x] Title @@{20:02}";
         let parser = KanbanParser::parse(Rule::card, input)
             .unwrap()
             .next()
