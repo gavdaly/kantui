@@ -5,12 +5,13 @@ pub enum Status {
     Incomplete,
 }
 
-impl Status {
-    pub fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let string = match self {
             Status::Done => "x".to_string(),
             Status::Incomplete => " ".to_string(),
-        }
+        };
+        write!(f, "{string}")
     }
 }
 
