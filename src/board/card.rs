@@ -10,23 +10,8 @@ pub struct Card {
 }
 
 impl Card {
-    pub fn to_string(&self) -> String {
-        let status = self.status.to_string();
-        let title = &self.title;
-        let date = self
-            .date
-            .as_ref()
-            .map(|d| format!(" @{{{}}}", d))
-            .unwrap_or_default();
-        let time = self
-            .time
-            .as_ref()
-            .map(|t| format!(" @@{{{}}}", t))
-            .unwrap_or_default();
-        format!("- [{status}] {title}{date}{time}")
-    }
-    pub fn move_to(&mut self, to: &String) {
-        self.column = to.clone();
+    pub fn move_to(&mut self, to: &str) {
+        self.column = to.to_string();
     }
     pub fn column(&self) -> &String {
         &self.column
