@@ -149,6 +149,7 @@ impl Kanban {
                 Rule::card => {
                     let mut card_text = String::new();
                     let mut status = Status::Incomplete;
+                    let mut date: Option<String> = None;
 
                     for part in pair.into_inner() {
                         match part.as_rule() {
@@ -163,17 +164,24 @@ impl Kanban {
                             Rule::text => {
                                 card_text = part.as_str().to_string();
                             }
+                            Rule::date => {
+                                let date_str = part.as_str();
+                                date = Some(date_str.to_string());
+                            }
                             _ => {}
                         }
                     }
 
-                    kanban.add_card(
-                        &CardBuilder::new()
-                            .column(&current_column)
-                            .title(&card_text)
-                            .status(status)
-                            .build()?,
-                    )?;
+                    let mut card = CardBuilder::new()
+                        .column(&current_column)
+                        .title(&card_text)
+                        .status(status);
+                    if let Some(date) = date {
+                        card = card.date(&date);
+                    }
+                    let card = card.build()?;
+
+                    kanban.add_card(&card)?;
                 }
                 _ => {}
             }
@@ -226,5 +234,37 @@ mod test {
         assert_eq!(kanban.cards.len(), 1);
         assert_eq!(kanban.cards[0].title(), "I'm doing it!!");
         assert_eq!(kanban.cards[0].status(), &Status::Incomplete);
+    }
+
+    #[test]
+    fn test_parse_with_date() {
+        let input = r#"## To Do
+
+- [ ] Task with date @{2024-01-15}
+- [ ] Second Task
+"#;
+
+        let kanban = Kanban::parse(input).unwrap();
+        assert_eq!(kanban.columns, vec!["To Do".to_string()]);
+        assert_eq!(kanban.cards.len(), 2);
+        assert_eq!(kanban.cards[0].title().trim(), "Task with date");
+        assert_eq!(kanban.cards[0].date(), Some("2024-01-15".to_string()));
+    }
+
+    #[test]
+    fn test_date_parse() {
+        let input = "2121-12-12";
+        let parser = KanbanParser::parse(Rule::date, input).unwrap().as_str();
+        assert_eq!(parser, input);
+    }
+
+    #[test]
+    fn test_parse_card() {
+        let input = "- [x] Title @{2025-01-02}";
+        let parser = KanbanParser::parse(Rule::card, input)
+            .unwrap()
+            .next()
+            .unwrap();
+        assert_eq!(parser.into_inner().len(), 3);
     }
 }

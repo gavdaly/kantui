@@ -1,16 +1,19 @@
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 SPACE      = _{ " " }
 
-kanban = { SOI ~ column+ ~ EOI }
+// Basic building blocks first
+text         = @{ (!("@{" | NEWLINE) ~ ANY)+ }
+date         = ${ ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{1, 2} ~ "-" ~ ASCII_DIGIT{1, 2} }
+date_wrapper = _{ "@{" ~ date ~ "}" }
+complete     =  { "x" }
+incomplete   =  { " " }
+status       =  { complete | incomplete }
 
-column         = _{ column_heading ~ column_content }
+// More complex rules that use the building blocks
+card           = ${ "- [" ~ status ~ "]" ~ " "+ ~ text ~ date_wrapper? ~ NEWLINE? }
 column_heading = ${ "##" ~ SPACE+ ~ text ~ NEWLINE }
 column_content = _{ NEWLINE* ~ card* }
+column         = _{ column_heading ~ column_content }
 
-card   = ${ "- [" ~ status ~ "]" ~ " "+ ~ text ~ NEWLINE? }
-text   =  { (!NEWLINE ~ ANY)+ }
-status = ${ complete | incomplete }
-
-// Make status atomic
-complete   = { "x" }
-incomplete = { " " }
+// The top-level rule last
+kanban = { SOI ~ column+ ~ EOI }
