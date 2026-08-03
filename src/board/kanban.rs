@@ -1,4 +1,4 @@
-use super::card::{Card, CardBuilder};
+use super::card::{Card, CardBuilder, ColumnName};
 use super::status::Status;
 use pest::Parser;
 use pest_derive::Parser;
@@ -41,8 +41,8 @@ impl Kanban {
     /// let mut board = Kanban::default();
     /// board.add_column("To Do".to_string()).unwrap();
     /// ```
-    pub fn add_column(&mut self, name: String) -> Result<(), String> {
-        self.columns.push(name);
+    pub fn add_column(&mut self, name: impl Into<ColumnName>) -> Result<(), String> {
+        self.columns.push(name.into().to_string());
 
         Ok(())
     }
@@ -72,8 +72,8 @@ impl Kanban {
     }
 
     /// Internal helper to check if a column exists.
-    fn has_column(&self, column: &String) -> Result<(), String> {
-        match self.columns.contains(column) {
+    fn has_column(&self, column: &str) -> Result<(), String> {
+        match self.columns.iter().any(|name| name == column) {
             true => Ok(()),
             false => Err("Column does not exist".to_string()),
         }
@@ -99,8 +99,9 @@ impl Kanban {
     /// board.add_card(&card).unwrap();
     /// board.move_card(&"Done".to_string(), card).unwrap();
     /// ```
-    pub fn move_card(&mut self, to: &String, card: Card) -> Result<(), String> {
-        self.has_column(to)?;
+    pub fn move_card(&mut self, to: impl Into<ColumnName>, card: Card) -> Result<(), String> {
+        let to = to.into();
+        self.has_column(to.as_ref())?;
 
         self.cards = self
             .cards
@@ -108,7 +109,7 @@ impl Kanban {
             .into_iter()
             .map(|mut c| {
                 if c == card {
-                    c.move_to(to);
+                    c.move_to(to.clone());
                 }
                 c
             })
@@ -178,8 +179,8 @@ impl Kanban {
                     }
 
                     let mut card = CardBuilder::new()
-                        .column(&current_column)
-                        .title(&card_text)
+                        .column(current_column.as_str())
+                        .title(card_text.as_str())
                         .status(status);
                     if let Some(date) = date {
                         card = card.date(&date);
@@ -265,16 +266,16 @@ mod test {
         assert_eq!(kanban.cards.len(), 4);
         assert_eq!(kanban.cards[0].title(), "Task with date");
         assert_eq!(kanban.cards[0].date(), Some("2024-01-15".to_string()));
-        assert_eq!(kanban.cards[0].column(), &format!("To Do"));
+        assert_eq!(kanban.cards[0].column(), "To Do");
         assert_eq!(kanban.cards[1].title(), "Second Task");
-        assert_eq!(kanban.cards[1].column(), &format!("To Do"));
+        assert_eq!(kanban.cards[1].column(), "To Do");
         assert_eq!(kanban.cards[2].title(), "Third One");
         assert_eq!(kanban.cards[2].time(), Some("20:02".to_string()));
-        assert_eq!(kanban.cards[2].column(), &format!("To Do"));
+        assert_eq!(kanban.cards[2].column(), "To Do");
         assert_eq!(kanban.cards[3].title(), "I'm doing it!!");
         assert_eq!(kanban.cards[3].date(), None);
         assert_eq!(kanban.cards[3].time(), None);
-        assert_eq!(kanban.cards[3].column(), &format!("In Progress"));
+        assert_eq!(kanban.cards[3].column(), "In Progress");
     }
 
     #[test]

@@ -1,26 +1,93 @@
 use super::status::Status;
+use std::fmt;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ColumnName(String);
+
+impl ColumnName {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self(name.into())
+    }
+}
+
+impl AsRef<str> for ColumnName {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for ColumnName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl From<&str> for ColumnName {
+    fn from(value: &str) -> Self {
+        Self::new(value)
+    }
+}
+
+impl From<String> for ColumnName {
+    fn from(value: String) -> Self {
+        Self::new(value)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CardTitle(String);
+
+impl CardTitle {
+    pub fn new(title: impl Into<String>) -> Self {
+        Self(title.into())
+    }
+}
+
+impl AsRef<str> for CardTitle {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for CardTitle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl From<&str> for CardTitle {
+    fn from(value: &str) -> Self {
+        Self::new(value)
+    }
+}
+
+impl From<String> for CardTitle {
+    fn from(value: String) -> Self {
+        Self::new(value)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Card {
-    column: String,
+    column: ColumnName,
     status: Status,
-    title: String,
+    title: CardTitle,
     date: Option<String>,
     time: Option<String>,
 }
 
 impl Card {
-    pub fn move_to(&mut self, to: &str) {
-        self.column = to.to_string();
+    pub fn move_to(&mut self, to: impl Into<ColumnName>) {
+        self.column = to.into();
     }
-    pub fn column(&self) -> &String {
-        &self.column
+    pub fn column(&self) -> &str {
+        self.column.as_ref()
     }
     pub fn status(&self) -> &Status {
         &self.status
     }
-    pub fn title(&self) -> &String {
-        &self.title
+    pub fn title(&self) -> &str {
+        self.title.as_ref()
     }
 
     pub fn date(&self) -> Option<String> {
@@ -32,13 +99,13 @@ impl Card {
     }
 
     pub fn mut_rename(mut self, new_name: &str) -> Self {
-        self.title = new_name.to_string();
+        self.title = CardTitle::new(new_name);
         self
     }
 
     pub fn rename(&self, new_name: &str) -> Self {
         Card {
-            title: new_name.to_string(),
+            title: CardTitle::new(new_name),
             ..self.clone()
         }
     }
@@ -65,9 +132,9 @@ impl std::fmt::Display for Card {
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CardBuilder {
-    column: Option<String>,
+    column: Option<ColumnName>,
     status: Option<Status>,
-    title: Option<String>,
+    title: Option<CardTitle>,
     date: Option<String>,
     time: Option<String>,
 }
@@ -77,8 +144,8 @@ impl CardBuilder {
         CardBuilder::default()
     }
 
-    pub fn column(mut self, column: &str) -> Self {
-        self.column = Some(column.to_string());
+    pub fn column(mut self, column: impl Into<ColumnName>) -> Self {
+        self.column = Some(column.into());
         self
     }
 
@@ -87,8 +154,8 @@ impl CardBuilder {
         self
     }
 
-    pub fn title(mut self, title: &str) -> Self {
-        self.title = Some(title.to_string());
+    pub fn title(mut self, title: impl Into<CardTitle>) -> Self {
+        self.title = Some(title.into());
         self
     }
 
@@ -152,7 +219,7 @@ mod tests {
             .title("Title")
             .build()
             .unwrap();
-        card.move_to(&"New Column".to_string());
+        card.move_to("New Column");
         assert_eq!(card.column(), "New Column");
     }
 
